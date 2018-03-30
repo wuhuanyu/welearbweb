@@ -12,25 +12,13 @@ import IconButton from 'material-ui/IconButton';
 import MenuIcon from 'material-ui-icons/Menu';
 import ChevronLeftIcon from 'material-ui-icons/ChevronLeft';
 import ChevronRightIcon from 'material-ui-icons/ChevronRight';
-import { mailFolderListItems, otherMailFolderListItems } from '../tileData';
+import { Categories } from '../tileData';
+import CourseGrids from './courses';
+
+
 
 const drawerWidth = 240;
-// const categories=(
-//     ['我的课程','我要发布','聊天室'].map(v=>{
-//         return(
-//             <div>
-//             <ListItem>
-//                 <Button>
-//                     <Typography>
-//                         {v}
-//                     </Typography>
-//                 </Button>
-//             </ListItem>
-//             <Divider/>
-//             </div>
-//         );
-//     })
-// )
+
 const styles = theme => ({
   root: {
     flexGrow: 1,
@@ -95,11 +83,16 @@ const styles = theme => ({
   },
 });
 
-class MiniDrawer extends React.Component {
-  state = {
-    open: false,
-  };
+class WeLearnDrawer extends React.Component {
 
+  constructor(){
+    super();
+    this.state={
+      open:false,
+      siderBarIdx:0,
+    }
+  }
+  
   handleDrawerOpen = () => {
     this.setState({ open: true });
   };
@@ -107,6 +100,29 @@ class MiniDrawer extends React.Component {
   handleDrawerClose = () => {
     this.setState({ open: false });
   };
+
+  siderBarHandler=(idx)=>{
+    this.setState({
+      siderBarIdx:idx,
+    });
+  }
+
+  getCurrentContent=()=>{
+    //for placeholder
+        const {siderBarIdx}=this.state;
+let placeholder=(<div>
+      PlaceHolder+{siderBarIdx}
+    </div>);
+
+    let content;
+    switch(siderBarIdx){
+      case 0: content=<CourseGrids/>;break;
+      default:content=placeholder;break;
+      // case 1: content=placeholder;break;
+    }
+    return content;
+  }
+
 
   render() {
     const { classes, theme } = this.props;
@@ -145,24 +161,27 @@ class MiniDrawer extends React.Component {
           </div>
           <Divider />
           <Divider />
-          <List>{mailFolderListItems}</List>
-          <Divider/>
-              <List>
+          <List>
+            <Categories handler={this.siderBarHandler.bind(this)}/>
+          </List>
+          {/* <List>{mailFolderListItems}</List> */}
+          <Divider />
+          {/* <List>
                   {otherMailFolderListItems}
-              </List>
+              </List> */}
         </Drawer>
         <main className={classes.content}>
           <div className={classes.toolbar} />
-          <Typography noWrap>{'内容'}</Typography>
+          {this.getCurrentContent()}
         </main>
       </div>
     );
   }
 }
 
-MiniDrawer.propTypes = {
+WeLearnDrawer.propTypes = {
   classes: PropTypes.object.isRequired,
   theme: PropTypes.object.isRequired,
 };
 
-export default withStyles(styles, { withTheme: true })(MiniDrawer);
+export default withStyles(styles, { withTheme: true })(WeLearnDrawer);

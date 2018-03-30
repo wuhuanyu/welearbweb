@@ -7,38 +7,42 @@ import Typography from 'material-ui/Typography';
 
 const styles = {
   card: {
-    maxWidth: 345,
+    maxWidth: 300,
   },
   media: {
-    height: 200,
+    height: 180,
   },
 };
 
-function SimpleMediaCard(props) {
+function CourseCard(props) {
   const { classes } = props;
+  const {imageSrc,description,name,courseId}=props;
+
   return (
     <div>
       <Card className={classes.card}>
         <CardMedia
           className={classes.media}
-          image='https://timgsa.baidu.com/timg?image&quality=80&size=b9999_10000&sec=1522334736966&di=ef2741c56ac00195f5f20541e4f2e0a3&imgtype=0&src=http%3A%2F%2Fimg5.duitang.com%2Fuploads%2Fitem%2F201604%2F01%2F20160401175045_LYJKw.jpeg'
-          title="苍井优"
-        />
+          image={imageSrc}
+          title={name}
+          />
         <CardContent>
           <Typography gutterBottom variant="headline" component="h2">
-            Lizard
+          {name}
           </Typography>
           <Typography component="p">
-            Lizards are a widespread group of squamate reptiles, with over 6,000 species, ranging
-            across all continents except Antarctica
+          {description}
           </Typography>
         </CardContent>
         <CardActions>
           <Button size="small" color="primary">
-            Share
+            分享
           </Button>
-          <Button size="small" color="primary">
-            Learn More
+          <Button size="small" color="primary" onClick={()=>{
+            
+            // console.log(`you clicked course:${courseId}`);
+          }}>
+          详细
           </Button>
         </CardActions>
       </Card>
@@ -46,8 +50,8 @@ function SimpleMediaCard(props) {
   );
 }
 
-SimpleMediaCard.propTypes = {
+CourseCard.propTypes = {
   classes: PropTypes.object.isRequired,
 };
 
-export default withStyles(styles)(SimpleMediaCard);
+export default withStyles(styles)(CourseCard);
