@@ -3,13 +3,17 @@ import logo from './logo.svg';
 import './App.css';
 import Course from './components/course_card';
 import Header from './components/header';
+import axios from 'axios';
 // import _Header from './components/_header';
+const host="localhost";
+const port="3000";
 class App extends Component {
   constructor(){
     super();
     window.context={};
-    window.context.api='http://localhost:3000/api/v1/';
-    window.context.image_api='http://localhost:3000/images/';
+    window.context.api=`http://${host}:${port}/api/v1/`;
+    window.context.image_api=`http://${host}:${port}/images/`;
+    window.context.axios=axios;
   }
   render() {
     return (

@@ -4,7 +4,7 @@ import { withStyles } from 'material-ui/styles';
 import Card, { CardActions, CardContent, CardMedia } from 'material-ui/Card';
 import Button from 'material-ui/Button';
 import Typography from 'material-ui/Typography';
-
+import {Link} from 'react-router-dom';
 const styles = {
   card: {
     maxWidth: 300,
@@ -20,7 +20,7 @@ function CourseCard(props) {
 
   return (
     <div>
-      <Card className={classes.card}>
+      <Card className={classes.card}  >
         <CardMedia
           className={classes.media}
           image={imageSrc}
@@ -38,12 +38,14 @@ function CourseCard(props) {
           <Button size="small" color="primary">
             分享
           </Button>
-          <Button size="small" color="primary" onClick={()=>{
-            
-            // console.log(`you clicked course:${courseId}`);
-          }}>
+          <Link
+            to={`/course/${courseId}`}
+            style={{textDecoration:'none'}}
+          >
+          <Button size="small" color="primary">
           详细
           </Button>
+          </Link>
         </CardActions>
       </Card>
     </div>
