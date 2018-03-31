@@ -105,9 +105,15 @@ class CourseDetail extends React.Component {
         });
         let _response = await axios.get(`http://localhost:3000/api/v1/course/${course_id}`);
         let course = _response.data.data;
-        console.log(JSON.stringify(course))
+        let _bulletinRes=await axios.get(`http://localhost:3000/api/v1/course/${course_id}/bulletin`);
+
         this.setState({
             course: course,
+            bulletinData:_bulletinRes.data.data.map(bulletin=>{
+                // let localDate=
+                bulletin.publish_time=(new Date(bulletin.publish_time).toLocaleDateString());
+                return bulletin;
+            })
         });
     }
     render() {
@@ -141,7 +147,7 @@ class CourseDetail extends React.Component {
                         <Typography variant='display2'>
                         {'公告牌'}
                         </Typography>
-                    
+                        <Blank/>
                         <BulletinList bulletinData={bulletinData} avatar={"http://localhost:3000/images/"+course.images[0]}/>
                         <Blank/>
                         <Button variant='fab' color="primary" aria-label="add" onClick={this._onHandlerAddBulletin.bind(this)}>
