@@ -15,10 +15,15 @@ import ChevronRightIcon from 'material-ui-icons/ChevronRight';
 import { Categories } from '../tileData';
 import CourseGrids from './courses';
 import Button from 'material-ui/Button';
-
+import ReactMaterialNotifications from 'react-materialui-notifications';
+import Message from 'material-ui-icons/Message';
+// import NotificationSystem from 'react-notification-system';
+// import {deepOrange500} from 'material-ui/styles/colors';
 import Dialog, { DialogContent, DialogTitle, DialogContentText, DialogActions } from 'material-ui/Dialog';
 import TextField from 'material-ui/TextField';
 import axios from 'axios';
+import { ToastContainer, toast } from 'react-toastify';
+const NotificationSystem = require('react-notification-system');
 const drawerWidth = 240;
 
 const styles = theme => ({
@@ -86,6 +91,7 @@ const styles = theme => ({
 });
 
 class Home extends React.Component {
+  _notificationSystem = null
 
   constructor() {
     super();
@@ -97,45 +103,87 @@ class Home extends React.Component {
 
       username: null,
       password: null,
-      id:null,
+      id: null,
+      subscribe: [],
     }
   }
 
+  _subscribeHandler(ids) {
+    this.setState({
+      subscribe:ids,
+    });
+    let mqtt=window.mqttClient;
+    ids.forEach(id=>mqtt.subscribe(''+id));
+    // mqtt.subscribe()
+  }
+
+
+  _showNotification(msg) {
+    let m = `You've got New Message to ${msg['course_name']} \n ${msg['body']}`
+    toast.info(m, {
+      autoClose: 3000,
+      position: toast.POSITION.TOP_RIGHT
+    });
+   
+  }
+_dispatchMessage(msg){
+    console.log(msg);
+    this._showNotification(JSON.parse(msg)['payload']);
+  }
+
   async _doLogout() {
-    await axios.post('http://localhost:3000/api/v1/acc',{
-      name:this.state.username,
-      password:this.state.password,
-      type:11,
-      action:'logout',
+    await axios.post('http://localhost:3000/api/v1/acc', {
+      name: this.state.username,
+      password: this.state.password,
+      type: 11,
+      action: 'logout',
     });
 
     sessionStorage.clear();
     localStorage.clear();
 
     this.setState({
-      haveLogin:false,
-      username:null,
-      password:null,
-      id:null,
+      haveLogin: false,
+      username: null,
+      password: null,
+      id: null,
     });
   }
 
-  componentWillMount(){
-    this.setState({
-      haveLogin:Boolean(sessionStorage.getItem('token')),
-      username:sessionStorage.getItem('username'),
-      password:sessionStorage.getItem('password'),
-      id:sessionStorage.getItem('id'),
-    });
+  
+  componentDidMount() {
+    this._notificationSystem = this.refs.notificationSystem;
   }
-  componentWillUnmount(){
+
+  componentWillMount() {
+
+    this.setState({
+      haveLogin: Boolean(sessionStorage.getItem('token')),
+      username: sessionStorage.getItem('username'),
+      password: sessionStorage.getItem('password'),
+      id: sessionStorage.getItem('id'),
+    });
+
+    let client = window.mows.createClient('ws://localhost:9001');
+     client.on('connect', () => {
+      console.log('client connect to mqtt');
+    });
+    client.on('message',(topic,data)=>{
+      this._dispatchMessage(data.toString());
+    })
+    window.mqttClient=client;
+
+  }
+  componentWillUnmount() {
+    let client=window.mqttClient;
+    this.state.subscribe.forEach(id=>client.unsubscribe(''+id));
     sessionStorage.clear();
   }
 
   _handleLoginForm() {
     if (this.state.haveLogin) {
-      (async()=>{
-       await this._doLogout();
+      (async () => {
+        await this._doLogout();
       })();
       return;
     }
@@ -150,23 +198,23 @@ class Home extends React.Component {
 
     const { username, password } = this.state;
     (async () => {
-      try{
-      let _response = await axios.post('http://localhost:3000/api/v1/acc', {
-        name: username,
-        password: password,
-        type: 11,
-        action: 'login',
-      });
-     let token = _response.data.token, id = +(_response.data.id);
-      this.setState({
-        haveLogin:true,
-      })
-      sessionStorage.setItem('token', token);
-      sessionStorage.setItem('id', id);
-      sessionStorage.setItem('username',username);
-      sessionStorage.setItem('password',password);
+      try {
+        let _response = await axios.post('http://localhost:3000/api/v1/acc', {
+          name: username,
+          password: password,
+          type: 11,
+          action: 'login',
+        });
+        let token = _response.data.token, id = +(_response.data.id);
+        this.setState({
+          haveLogin: true,
+        })
+        sessionStorage.setItem('token', token);
+        sessionStorage.setItem('id', id);
+        sessionStorage.setItem('username', username);
+        sessionStorage.setItem('password', password);
 
-      }catch(error){
+      } catch (error) {
         alert('wrong');
       }
     })();
@@ -200,7 +248,7 @@ class Home extends React.Component {
 
     let content;
     switch (siderBarIdx) {
-      case 0: content = <CourseGrids />; break;
+      case 0: content = <CourseGrids subscribeHandler={this._subscribeHandler.bind(this)} />; break;
       default: content = placeholder; break;
       // case 1: content=placeholder;break;
     }
@@ -214,6 +262,8 @@ class Home extends React.Component {
 
     return (
       <div className={classes.root}>
+        {/* <NotificationSystem ref="notificationSystem"/> */}
+        <ToastContainer hideProgressBar={true} newestOnTop={true} autoClose={5000} />
         <AppBar
           position="absolute"
           className={classNames(classes.appBar, this.state.open && classes.appBarShift)}

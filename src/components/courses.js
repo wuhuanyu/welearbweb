@@ -16,11 +16,16 @@ class CourseGrids extends React.Component{
 
    async componentWillMount(){
         const {api}=window.context;
-       let _response=await axios.get(api+'acc/tea/1/course');
+
+        const {subscribeHandler}=this.props;
+      let _response=await axios.get(api+'acc/tea/1/course');
        let courses=_response.data.data;
-       this.setState({
+       subscribeHandler(courses.map(c=>c['id']));
+      this.setState({
            courses:courses,
        });
+
+       
     }
     render(){
         let courseCards=this.state.courses.map(data=>{

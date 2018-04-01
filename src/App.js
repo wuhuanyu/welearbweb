@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import logo from './logo.svg';
 import './App.css';
 import Course from './components/course_card';
-import Header from './components/header';
+import Home from './components/home';
 import axios from 'axios';
 // import _Header from './components/_header';
 const host="localhost";
@@ -18,7 +18,7 @@ class App extends Component {
   render() {
     return (
       <div className="App">
-      <Header/>
+      <Home/>
       </div>
     );
   }
