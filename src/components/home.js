@@ -23,8 +23,12 @@ import Dialog, { DialogContent, DialogTitle, DialogContentText, DialogActions } 
 import TextField from 'material-ui/TextField';
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
+import { Base64 } from 'js-base64';
+
 const NotificationSystem = require('react-notification-system');
 const drawerWidth = 240;
+
+
 
 const styles = theme => ({
   root: {
@@ -101,19 +105,17 @@ class Home extends React.Component {
       haveLogin: false,
       loginForm: false,
 
-      username: null,
-      password: null,
-      id: null,
       subscribe: [],
+      heartbeatId: null,
     }
   }
 
   _subscribeHandler(ids) {
     this.setState({
-      subscribe:ids,
+      subscribe: ids,
     });
-    let mqtt=window.mqttClient;
-    ids.forEach(id=>mqtt.subscribe(''+id));
+    let mqtt = window.mqttClient;
+    ids.forEach(id => mqtt.subscribe('' + id));
     // mqtt.subscribe()
   }
 
@@ -124,24 +126,26 @@ class Home extends React.Component {
       autoClose: 3000,
       position: toast.POSITION.TOP_RIGHT
     });
-   
+
   }
-_dispatchMessage(msg){
-    console.log(msg);
+  _dispatchMessage(msg) {
+
     this._showNotification(JSON.parse(msg)['payload']);
   }
 
   async _doLogout() {
     await axios.post('http://localhost:3000/api/v1/acc', {
-      name: this.state.username,
-      password: this.state.password,
-      type: 11,
-      action: 'logout',
+        name: localStorage.getItem('username'),
+        password: localStorage.getItem("password"),
+        type: 11,
+        action: 'logout',
     });
 
     sessionStorage.clear();
     localStorage.clear();
-
+    if (this.state.heartbeatId) {
+      clearInterval(this.state.heartbeatId);
+    }
     this.setState({
       haveLogin: false,
       username: null,
@@ -150,33 +154,27 @@ _dispatchMessage(msg){
     });
   }
 
-  
+
   componentDidMount() {
     this._notificationSystem = this.refs.notificationSystem;
   }
 
   componentWillMount() {
-
-    this.setState({
-      haveLogin: Boolean(sessionStorage.getItem('token')),
-      username: sessionStorage.getItem('username'),
-      password: sessionStorage.getItem('password'),
-      id: sessionStorage.getItem('id'),
-    });
+    this._doLogin();
 
     let client = window.mows.createClient('ws://localhost:9001');
-     client.on('connect', () => {
+    client.on('connect', () => {
       console.log('client connect to mqtt');
     });
-    client.on('message',(topic,data)=>{
+    client.on('message', (topic, data) => {
       this._dispatchMessage(data.toString());
     })
-    window.mqttClient=client;
+    window.mqttClient = client;
 
   }
   componentWillUnmount() {
-    let client=window.mqttClient;
-    this.state.subscribe.forEach(id=>client.unsubscribe(''+id));
+    let client = window.mqttClient;
+    this.state.subscribe.forEach(id => client.unsubscribe('' + id));
     sessionStorage.clear();
   }
 
@@ -185,6 +183,9 @@ _dispatchMessage(msg){
       (async () => {
         await this._doLogout();
       })();
+      this.setState({
+        haveLogin: false,
+      })
       return;
     }
     this.setState(prv => {
@@ -196,28 +197,41 @@ _dispatchMessage(msg){
 
   _doLogin() {
 
-    const { username, password } = this.state;
-    (async () => {
-      try {
-        let _response = await axios.post('http://localhost:3000/api/v1/acc', {
-          name: username,
-          password: password,
-          type: 11,
-          action: 'login',
-        });
-        let token = _response.data.token, id = +(_response.data.id);
-        this.setState({
-          haveLogin: true,
-        })
-        sessionStorage.setItem('token', token);
-        sessionStorage.setItem('id', id);
-        sessionStorage.setItem('username', username);
-        sessionStorage.setItem('password', password);
+    let username = localStorage.getItem('username');
+    let password = localStorage.getItem('password');
+    if (username && password) {
 
-      } catch (error) {
-        alert('wrong');
-      }
-    })();
+      (async () => {
+        try {
+          let _response = await axios.post('http://localhost:3000/api/v1/acc', {
+            name: username,
+            password: password,
+            type: 11,
+            action: 'login',
+          });
+          let token = _response.data.token, id = +(_response.data.id);
+       
+          localStorage.setItem('token', token);
+          localStorage.setItem('id', id);
+          localStorage.setItem('username', username);
+          localStorage.setItem('password', password);
+          let refreshTokenId = setInterval(async () => {
+            await axios.get('http://localhost:3000/api/v1/heartbeat', {
+              headers: {
+                'authorization': Base64.encode(`11:${id}:${token}`)
+              }
+            });
+          }, 25 * 60 * 1000);
+          this.setState({
+            heartbeatId: refreshTokenId,
+            haveLogin:true,
+          });
+        } catch (error) {
+          alert('wrong');
+        }
+
+      })();
+    }
   }
 
   handleDrawerOpen = () => {
@@ -299,6 +313,8 @@ _dispatchMessage(msg){
                   Cancel
                </Button>
                 <Button onClick={() => {
+                  localStorage.setItem('username', this.state.username);
+                  localStorage.setItem('password', this.state.password);
                   this._doLogin.bind(this)();
                   this._loginFormClose.bind(this)();
                 }}>
@@ -331,7 +347,7 @@ _dispatchMessage(msg){
         </Drawer>
         <main className={classes.content}>
           <div className={classes.toolbar} />
-          {this.getCurrentContent()}
+          {this.state.haveLogin&&(this.getCurrentContent())}
         </main>
       </div>
     );

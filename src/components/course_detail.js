@@ -14,12 +14,19 @@ import { Launcher } from 'react-chat-window';
 import BulletinList from './bulletin_list';
 import AddIcon from 'material-ui-icons/Add';
 import TextField from 'material-ui/TextField';
+import Card from 'material-ui/Card';
+import { DateTimePicker } from 'material-ui-pickers';
+import Form from 'muicss/lib/react/form';
+import Input from 'muicss/lib/react/input';
+import Textarea from 'muicss/lib/react/textarea';
+import DropzoneComponent from 'react-dropzone-component';
+import {Base64} from 'js-base64';
 import Dialog, {
     DialogActions,
     DialogContent,
     DialogContentText,
     DialogTitle,
-  } from 'material-ui/Dialog';
+} from 'material-ui/Dialog';
 
 const styles = {
     root: {
@@ -38,7 +45,78 @@ const Blank = (props) => (
     <div style={{ height: 10 }}>
     </div>
 )
+class HomeworkUploader extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            selectedDate: new Date(),
+            body: null,
+        }
+        this.eventHandlers = {
+            addedfile: (file) => console.log(file),
+        }
+        this.djsConfig = {
+            autoProcessQueue: false,
+            addRemoveLinks: true,
+            acceptedFiles: "image/jpeg,image/png,image/gif"
+        }
+        this.componentConfig = {
+            postUrl: 'no',
+            iconFiletypes: ['.jpg', '.png', '.gif'],
+            showFiletypeIcon: true,
+        }
+    }
 
+    handleDateChange = (date) => {
+        this.setState({
+            selectedDate: date,
+            body: null,
+        });
+    }
+
+
+    render() {
+        let selectedDate = this.state.selectedDate;
+        return (
+            <div>
+                <Card style={{ padding: 10 }}>
+                    <React.Fragment>
+                        <div className="picker">
+                            <DateTimePicker
+                                fullWidth
+                                value={selectedDate}
+                                disablePast
+                                ampm={false}
+                                onChange={this.handleDateChange}
+                                label="Deadline"
+                            />
+                        </div>
+                    </React.Fragment>
+                    <TextField
+                        label="Homework body"
+                        multiline
+                        rows="10"
+                        margin="normal"
+                        fullWidth
+                    />
+                    <DropzoneComponent
+                        config={this.componentConfig}
+                        eventHandlers={this.eventHandlers}
+                        djsConfig={this.djsConfig} />
+                </Card>
+
+                <Blank />
+                <Button variant="raised" color="primary">
+                    Cancel
+                    </Button>
+                <Button variant="raised" color="primary" style={{ marginLeft: 20 }}>
+                    Upload
+                    </Button>
+            </div>
+        )
+    }
+
+}
 
 class CourseDetail extends React.Component {
     constructor() {
@@ -47,30 +125,20 @@ class CourseDetail extends React.Component {
             course_id: -1,
             course: null,
             messageList: [],
+
             bulletinData: [
-                {
-                    id: 1, body: '下周考试', publish_time:new Date().toLocaleDateString(),
 
-                },
-                {
-                    id: 2, body: '下周考试', publish_time:new Date().toLocaleDateString(),
-
-                },
-                {
-                    id: 3, body: '下周考试', publish_time:new Date().toLocaleDateString(),
-
-                },
 
             ],
-            bulletinDialog:false,
-            newBulletin:null,
+            bulletinDialog: false,
+            newBulletin: null,
         }
     };
 
-    _onHandlerAddBulletin(){
-        this.setState(prv=>{
+    _onHandlerAddBulletin() {
+        this.setState(prv => {
             return {
-                bulletinDialog:!prv.bulletinDialog,
+                bulletinDialog: !prv.bulletinDialog,
             }
         })
     }
@@ -82,8 +150,26 @@ class CourseDetail extends React.Component {
         });
     }
 
-    _publishBulletin(){
+    _publishBulletin() {
         console.log(this.state.newBulletin);
+        let newBulletin = this.state.newBulletin;
+        (async () => {
+            let _response = await axios.post(`http://localhost:3000/api/v1/course/${this.props.match.params['courseId']}/bulletin`,
+                {
+                    body: newBulletin,
+                }, {
+                    //TODO: check login
+                    headers: {
+                        authorization: Base64.encode(`11:${localStorage.getItem('id')}:${localStorage.getItem('token')}`)
+                    }
+                }
+            )
+            console.log(_response.data);
+            if(_response.status===200){
+                await this.refreshBulletin();
+            }
+        }
+        )();
     }
 
     _sendMsg(text) {
@@ -97,6 +183,20 @@ class CourseDetail extends React.Component {
             }
         })
     }
+    
+    async refreshBulletin(){
+        const course_id = this.props.match.params['courseId'];
+        
+        let _bulletinRes = await axios.get(`http://localhost:3000/api/v1/course/${course_id}/bulletin`);
+        this.setState({
+            bulletinData: _bulletinRes.data.data.map(bulletin => {
+                // let localDate=
+                bulletin.publish_time = (new Date(bulletin.publish_time).toLocaleDateString());
+                return bulletin;
+            })
+
+        });
+    }
 
     async componentWillMount() {
         const course_id = this.props.match.params['courseId'];
@@ -105,20 +205,20 @@ class CourseDetail extends React.Component {
         });
         let _response = await axios.get(`http://localhost:3000/api/v1/course/${course_id}`);
         let course = _response.data.data;
-        let _bulletinRes=await axios.get(`http://localhost:3000/api/v1/course/${course_id}/bulletin`);
+        let _bulletinRes = await axios.get(`http://localhost:3000/api/v1/course/${course_id}/bulletin`);
 
         this.setState({
             course: course,
-            bulletinData:_bulletinRes.data.data.map(bulletin=>{
+            bulletinData: _bulletinRes.data.data.map(bulletin => {
                 // let localDate=
-                bulletin.publish_time=(new Date(bulletin.publish_time).toLocaleDateString());
+                bulletin.publish_time = (new Date(bulletin.publish_time).toLocaleDateString());
                 return bulletin;
             })
         });
     }
     render() {
         const { classes } = this.props;
-        const {course,bulletinData}=this.state;
+        const { course, bulletinData } = this.state;
 
         return (course && (
             <div className={classes.root}>
@@ -130,12 +230,15 @@ class CourseDetail extends React.Component {
                         <Typography variant="title" color="inherit" className={classes.flex}>
                             我们爱学习
                   </Typography>
+                        <Button color="inherit">
+                            Home
+                  </Button>
                     </Toolbar>
                 </AppBar>
-                <div style={{ paddingLeft: 100, paddingRight: 20 }}>
+                <div>
                     <Blank />
                     <Grid container spacing={24} direction='row'>
-                        <Grid item xs={6}>
+                        <Grid item xs={3}>
                             <CourseCard
                                 name={course.name}
                                 description={course.desc}
@@ -143,45 +246,53 @@ class CourseDetail extends React.Component {
                                 imageSrc={"http://localhost:3000/images/" + course.images[0]}
                             />
                         </Grid>
-                        <Grid item xs={6}>
-                        <Typography variant='display2'>
-                        {'公告牌'}
-                        </Typography>
-                        <Blank/>
-                        <BulletinList bulletinData={bulletinData} avatar={"http://localhost:3000/images/"+course.images[0]}/>
-                        <Blank/>
-                        <Button variant='fab' color="primary" aria-label="add" onClick={this._onHandlerAddBulletin.bind(this)}>
-                            <AddIcon/>
-                        </Button>
+                        <Grid item xs={4}>
+                            <Typography variant='display2'>
+                                {'公告牌'}
+                            </Typography>
+                            <Blank />
+                            <BulletinList bulletinData={bulletinData} avatar={"http://localhost:3000/images/" + course.images[0]} />
+                            <Blank />
+                            <Button variant='fab' color="primary" aria-label="add" onClick={this._onHandlerAddBulletin.bind(this)}>
+                                <AddIcon />
+                            </Button>
                         </Grid>
-                        
+
+                        <Grid item xs={5}>
+                            <Typography variant='display2'>
+                                Homework
+                        </Typography>
+                            <Blank />
+                            <HomeworkUploader />
+                        </Grid>
+
                         <Dialog
-                         open={this.state.bulletinDialog} onClose={()=>{this.setState({bulletinDialog:false})}}>
-                         <DialogTitle>{'发布公告'}</DialogTitle>
-                         <DialogContent>
-                             <DialogContentText>
-                             {'公告发布后无法撤回,公告发出后，可能会存在延迟，但网页会自动更新'}
-                             </DialogContentText>
-                             <TextField autoFocus margin="dense" id="body" label="新公告" fullWidth onChange={(e)=>{
-                                 this.setState({
-                                     newBulletin:e.target.value,
-                                 })
-                             }}/>
-                         </DialogContent>
-                         <DialogActions>
-                             <Button onClick={()=>this.setState({bulletinDialog:false})}>
-                             取消
+                            open={this.state.bulletinDialog} onClose={() => { this.setState({ bulletinDialog: false }) }}>
+                            <DialogTitle>{'发布公告'}</DialogTitle>
+                            <DialogContent>
+                                <DialogContentText>
+                                    {'公告发布后无法撤回,公告发出后，可能会存在延迟，但网页会自动更新'}
+                                </DialogContentText>
+                                <TextField autoFocus margin="dense" id="body" label="新公告" fullWidth onChange={(e) => {
+                                    this.setState({
+                                        newBulletin: e.target.value,
+                                    })
+                                }} />
+                            </DialogContent>
+                            <DialogActions>
+                                <Button onClick={() => this.setState({ bulletinDialog: false })}>
+                                    取消
                              </Button>
-                             <Button onClick={()=>{
-                                 this._publishBulletin();
-                                 this.setState({bulletinDialog:false,newBulletin:false});
+                                <Button onClick={() => {
+                                    this._publishBulletin();
+                                    this.setState({ bulletinDialog: false, newBulletin: false });
                                 }
-                            }>
-                             发布
+                                }>
+                                    发布
                              </Button>
-                         </DialogActions>
-                         </Dialog>
-                        
+                            </DialogActions>
+                        </Dialog>
+
                         <Launcher
                             agentProfile={{
                                 teamName: course.name,
@@ -198,4 +309,35 @@ class CourseDetail extends React.Component {
     }
 }
 
+
+
+
+
 export default withStyles(styles)(CourseDetail);
+
+
+// class HomeworkUploader extends React.Component {
+//     constructor(props) {
+//         super(props);
+//     }
+
+//     uploadHandler(detail) {
+//         //deadline body
+//         const { uploadHandler } = this.props;
+//         uploadHandler(detail);
+//         // let {deadline,body}=detail;
+
+//     }
+//     render() {
+//         const { uploadConfig } = this.props;
+//         return (<div>
+//             <HomeworkUploader uploadHandler={this.uploadHandler.bind(this)} />
+//             <DropzoneComponent config={uploadConfig.config} eventHandlers={uploadConfig.eventHandlers} djsConfig={uploadConfig.djsConfig} />
+//         </div>)
+//     }
+
+// }
+
+
+
+

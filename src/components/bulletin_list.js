@@ -5,7 +5,7 @@ import { List, Card } from 'material-ui';
 const styles = theme => ({
     root: {
         backgroundColor: theme.palette.background.paper,
-        width: 300,
+        width: '100%',
     }
 });
 class BulletinList extends React.Component {

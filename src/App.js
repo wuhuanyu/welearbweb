@@ -4,7 +4,6 @@ import './App.css';
 import Course from './components/course_card';
 import Home from './components/home';
 import axios from 'axios';
-// import _Header from './components/_header';
 const host="localhost";
 const port="3000";
 class App extends Component {
@@ -17,8 +16,10 @@ class App extends Component {
   }
   render() {
     return (
+
       <div className="App">
       <Home/>
+
       </div>
     );
   }

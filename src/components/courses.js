@@ -18,7 +18,7 @@ class CourseGrids extends React.Component{
         const {api}=window.context;
 
         const {subscribeHandler}=this.props;
-      let _response=await axios.get(api+'acc/tea/1/course');
+      let _response=await axios.get(api+`acc/tea/${localStorage.getItem('id')}/course`);
        let courses=_response.data.data;
        subscribeHandler(courses.map(c=>c['id']));
       this.setState({
