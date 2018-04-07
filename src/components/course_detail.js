@@ -20,13 +20,15 @@ import Form from 'muicss/lib/react/form';
 import Input from 'muicss/lib/react/input';
 import Textarea from 'muicss/lib/react/textarea';
 import DropzoneComponent from 'react-dropzone-component';
-import {Base64} from 'js-base64';
+import { Base64 } from 'js-base64';
 import Dialog, {
     DialogActions,
     DialogContent,
     DialogContentText,
     DialogTitle,
 } from 'material-ui/Dialog';
+
+
 
 const styles = {
     root: {
@@ -119,6 +121,11 @@ class HomeworkUploader extends React.Component {
 }
 
 class CourseDetail extends React.Component {
+    mqttClient = (require('mqtt')).connect({
+        hostname: 'localhost',
+        port: '9001',
+        path: '/mqtt',
+    });
     constructor() {
         super();
         this.state = {
@@ -142,11 +149,22 @@ class CourseDetail extends React.Component {
             }
         })
     }
+    async _sendMsg(msg) {
+        await axios.post(`http://localhost:3000/api/v1/course/${this.props.match.params['courseId']}/message`, {
+            body: msg,
+        }, {
+                headers: {
+                    authorization: Base64.encode(`11:${localStorage.getItem('id')}:${localStorage.getItem('token')}`)
+                }
+            });
+    }
     _onMsgSend(msg) {
-        this.setState(prv => {
-            return {
-                messageList: [...prv.messageList, msg]
-            }
+        console.log(msg);
+        (async ()=>{
+            this._sendMsg(msg.data.text);
+        })();
+        this.setState({
+            messageList:[...this.state.messageList,msg]
         });
     }
 
@@ -165,28 +183,18 @@ class CourseDetail extends React.Component {
                 }
             )
             console.log(_response.data);
-            if(_response.status===200){
+            if (_response.status === 200) {
                 await this.refreshBulletin();
             }
         }
         )();
     }
 
-    _sendMsg(text) {
-        this.setState(prv => {
-            return {
-                messageList: [...prv.messageList, {
-                    author: 'Me',
-                    type: 'text',
-                    data: { text }
-                }]
-            }
-        })
-    }
-    
-    async refreshBulletin(){
+  
+
+    async refreshBulletin() {
         const course_id = this.props.match.params['courseId'];
-        
+
         let _bulletinRes = await axios.get(`http://localhost:3000/api/v1/course/${course_id}/bulletin`);
         this.setState({
             bulletinData: _bulletinRes.data.data.map(bulletin => {
@@ -198,7 +206,21 @@ class CourseDetail extends React.Component {
         });
     }
 
+    dispatchNewMessage(msg) {
+        //this is me
+        if (msg.sender_type === 11)
+            this.setState(prv => {
+                messageList: [...prv.messageList, msg]
+            });
+    }
+
     async componentWillMount() {
+        this.mqttClient.on('connect', () => {
+            console.log('in course detail mqtt client connnected ');
+        });
+        this.mqttClient.on('message', (topic, payload) => {
+
+        });
         const course_id = this.props.match.params['courseId'];
         this.setState({
             course_id: course_id,
@@ -314,30 +336,6 @@ class CourseDetail extends React.Component {
 
 
 export default withStyles(styles)(CourseDetail);
-
-
-// class HomeworkUploader extends React.Component {
-//     constructor(props) {
-//         super(props);
-//     }
-
-//     uploadHandler(detail) {
-//         //deadline body
-//         const { uploadHandler } = this.props;
-//         uploadHandler(detail);
-//         // let {deadline,body}=detail;
-
-//     }
-//     render() {
-//         const { uploadConfig } = this.props;
-//         return (<div>
-//             <HomeworkUploader uploadHandler={this.uploadHandler.bind(this)} />
-//             <DropzoneComponent config={uploadConfig.config} eventHandlers={uploadConfig.eventHandlers} djsConfig={uploadConfig.djsConfig} />
-//         </div>)
-//     }
-
-// }
-
 
 
 

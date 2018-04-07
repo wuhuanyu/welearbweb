@@ -17,8 +17,6 @@ import CourseGrids from './courses';
 import Button from 'material-ui/Button';
 import ReactMaterialNotifications from 'react-materialui-notifications';
 import Message from 'material-ui-icons/Message';
-// import NotificationSystem from 'react-notification-system';
-// import {deepOrange500} from 'material-ui/styles/colors';
 import Dialog, { DialogContent, DialogTitle, DialogContentText, DialogActions } from 'material-ui/Dialog';
 import TextField from 'material-ui/TextField';
 import axios from 'axios';
@@ -27,6 +25,8 @@ import { Base64 } from 'js-base64';
 
 const NotificationSystem = require('react-notification-system');
 const drawerWidth = 240;
+const mqtt=require('mqtt');
+// const mqttClient=require('../global').mqtt;
 
 
 
@@ -162,7 +162,11 @@ class Home extends React.Component {
   componentWillMount() {
     this._doLogin();
 
-    let client = window.mows.createClient('ws://localhost:9001');
+    let client = mqtt.connect({
+      hostname:'localhost',
+      port:9001,
+      path:'/mqtt',
+    });
     client.on('connect', () => {
       console.log('client connect to mqtt');
     });
@@ -173,10 +177,13 @@ class Home extends React.Component {
 
   }
   componentWillUnmount() {
+    console.log('home will unmount');
     let client = window.mqttClient;
     this.state.subscribe.forEach(id => client.unsubscribe('' + id));
-    sessionStorage.clear();
-  }
+    window.mqttClient.end(()=>{
+      console.log('mqttt client disconnnect');
+    }
+  );}
 
   _handleLoginForm() {
     if (this.state.haveLogin) {
