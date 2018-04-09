@@ -11,24 +11,12 @@ import Grid from 'material-ui/Grid';
 import CourseCard from './course_card';
 import axios from 'axios';
 import { Launcher } from 'react-chat-window';
-import BulletinList from './bulletin_list';
-import AddIcon from 'material-ui-icons/Add';
-import TextField from 'material-ui/TextField';
-import Card from 'material-ui/Card';
-import { DateTimePicker } from 'material-ui-pickers';
-import Form from 'muicss/lib/react/form';
-import Input from 'muicss/lib/react/input';
-import Textarea from 'muicss/lib/react/textarea';
-import DropzoneComponent from 'react-dropzone-component';
+import Blank from './Blank';
+import * as constants from '../constants';
 import { Base64 } from 'js-base64';
-import Dialog, {
-    DialogActions,
-    DialogContent,
-    DialogContentText,
-    DialogTitle,
-} from 'material-ui/Dialog';
-
-
+import BulletinBoard from "./BulletinBoard";
+import HomeworkUploader from './HomeworkUploader';
+import Chatter from './Chatter';
 
 const styles = {
     root: {
@@ -43,204 +31,52 @@ const styles = {
     },
 };
 
-const Blank = (props) => (
-    <div style={{ height: 10 }}>
-    </div>
-)
-class HomeworkUploader extends React.Component {
+class CourseDetail extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            selectedDate: new Date(),
-            body: null,
-        }
-        this.eventHandlers = {
-            addedfile: (file) => console.log(file),
-        }
-        this.djsConfig = {
-            autoProcessQueue: false,
-            addRemoveLinks: true,
-            acceptedFiles: "image/jpeg,image/png,image/gif"
-        }
-        this.componentConfig = {
-            postUrl: 'no',
-            iconFiletypes: ['.jpg', '.png', '.gif'],
-            showFiletypeIcon: true,
-        }
-    }
-
-    handleDateChange = (date) => {
-        this.setState({
-            selectedDate: date,
-            body: null,
-        });
-    }
-
-
-    render() {
-        let selectedDate = this.state.selectedDate;
-        return (
-            <div>
-                <Card style={{ padding: 10 }}>
-                    <React.Fragment>
-                        <div className="picker">
-                            <DateTimePicker
-                                fullWidth
-                                value={selectedDate}
-                                disablePast
-                                ampm={false}
-                                onChange={this.handleDateChange}
-                                label="Deadline"
-                            />
-                        </div>
-                    </React.Fragment>
-                    <TextField
-                        label="Homework body"
-                        multiline
-                        rows="10"
-                        margin="normal"
-                        fullWidth
-                    />
-                    <DropzoneComponent
-                        config={this.componentConfig}
-                        eventHandlers={this.eventHandlers}
-                        djsConfig={this.djsConfig} />
-                </Card>
-
-                <Blank />
-                <Button variant="raised" color="primary">
-                    Cancel
-                    </Button>
-                <Button variant="raised" color="primary" style={{ marginLeft: 20 }}>
-                    Upload
-                    </Button>
-            </div>
-        )
-    }
-
-}
-
-class CourseDetail extends React.Component {
-    mqttClient = (require('mqtt')).connect({
-        hostname: 'localhost',
-        port: '9001',
-        path: '/mqtt',
-    });
-    constructor() {
-        super();
-        this.state = {
-            course_id: -1,
+            course_id: props.match.params['courseId'],
             course: null,
-            messageList: [],
+        };
 
-            bulletinData: [
-
-
-            ],
-            bulletinDialog: false,
-            newBulletin: null,
-        }
     };
 
-    _onHandlerAddBulletin() {
-        this.setState(prv => {
-            return {
-                bulletinDialog: !prv.bulletinDialog,
-            }
-        })
-    }
-    async _sendMsg(msg) {
-        await axios.post(`http://localhost:3000/api/v1/course/${this.props.match.params['courseId']}/message`, {
-            body: msg,
-        }, {
-                headers: {
-                    authorization: Base64.encode(`11:${localStorage.getItem('id')}:${localStorage.getItem('token')}`)
-                }
-            });
-    }
-    _onMsgSend(msg) {
-        console.log(msg);
-        (async ()=>{
-            this._sendMsg(msg.data.text);
-        })();
-        this.setState({
-            messageList:[...this.state.messageList,msg]
-        });
-    }
-
-    _publishBulletin() {
-        console.log(this.state.newBulletin);
-        let newBulletin = this.state.newBulletin;
-        (async () => {
-            let _response = await axios.post(`http://localhost:3000/api/v1/course/${this.props.match.params['courseId']}/bulletin`,
-                {
-                    body: newBulletin,
-                }, {
-                    //TODO: check login
-                    headers: {
-                        authorization: Base64.encode(`11:${localStorage.getItem('id')}:${localStorage.getItem('token')}`)
-                    }
-                }
-            )
-            console.log(_response.data);
-            if (_response.status === 200) {
-                await this.refreshBulletin();
-            }
-        }
-        )();
-    }
-
-  
-
-    async refreshBulletin() {
-        const course_id = this.props.match.params['courseId'];
-
-        let _bulletinRes = await axios.get(`http://localhost:3000/api/v1/course/${course_id}/bulletin`);
-        this.setState({
-            bulletinData: _bulletinRes.data.data.map(bulletin => {
-                // let localDate=
-                bulletin.publish_time = (new Date(bulletin.publish_time).toLocaleDateString());
-                return bulletin;
-            })
-
-        });
-    }
-
-    dispatchNewMessage(msg) {
-        //this is me
-        if (msg.sender_type === 11)
-            this.setState(prv => {
-                messageList: [...prv.messageList, msg]
-            });
-    }
-
     async componentWillMount() {
+        const course_id = this.props.match.params['courseId'];
+        this.mqttClient = (require('mqtt')).connect({
+            hostname: 'localhost',
+            port: '9001',
+            path: '/mqtt',
+        });
         this.mqttClient.on('connect', () => {
             console.log('in course detail mqtt client connnected ');
+            this.mqttClient.subscribe(''+course_id,()=>{
+                console.log('subscribe to ', course_id);
+            })
         });
         this.mqttClient.on('message', (topic, payload) => {
+            console.log('course_detail received a message ',payload.toString());
+            let content=JSON.parse(payload.toString());
+            switch (content['type']){
+                case  constants.new_message:{
+                    let msgContent=content['payload'];
+                    if(+(msgContent['sender_id'])===+(localStorage.getItem("id"))&&+(msgContent['type'])===constants.ACC_T_Tea){
+                        return;
+                    }
+                    this.chatter.addOtherMsg(msgContent['body']);
+                }
+            }
+        });
 
-        });
-        const course_id = this.props.match.params['courseId'];
-        this.setState({
-            course_id: course_id,
-        });
         let _response = await axios.get(`http://localhost:3000/api/v1/course/${course_id}`);
         let course = _response.data.data;
-        let _bulletinRes = await axios.get(`http://localhost:3000/api/v1/course/${course_id}/bulletin`);
-
         this.setState({
             course: course,
-            bulletinData: _bulletinRes.data.data.map(bulletin => {
-                // let localDate=
-                bulletin.publish_time = (new Date(bulletin.publish_time).toLocaleDateString());
-                return bulletin;
-            })
         });
     }
     render() {
         const { classes } = this.props;
-        const { course, bulletinData } = this.state;
+        const { course,courseId} = this.state;
 
         return (course && (
             <div className={classes.root}>
@@ -251,10 +87,10 @@ class CourseDetail extends React.Component {
                         </IconButton>
                         <Typography variant="title" color="inherit" className={classes.flex}>
                             我们爱学习
-                  </Typography>
+                        </Typography>
                         <Button color="inherit">
                             Home
-                  </Button>
+                        </Button>
                     </Toolbar>
                 </AppBar>
                 <div>
@@ -268,62 +104,18 @@ class CourseDetail extends React.Component {
                                 imageSrc={"http://localhost:3000/images/" + course.images[0]}
                             />
                         </Grid>
+
                         <Grid item xs={4}>
-                            <Typography variant='display2'>
-                                {'公告牌'}
-                            </Typography>
-                            <Blank />
-                            <BulletinList bulletinData={bulletinData} avatar={"http://localhost:3000/images/" + course.images[0]} />
-                            <Blank />
-                            <Button variant='fab' color="primary" aria-label="add" onClick={this._onHandlerAddBulletin.bind(this)}>
-                                <AddIcon />
-                            </Button>
+                            <BulletinBoard course={this.state.course}/>
                         </Grid>
 
                         <Grid item xs={5}>
-                            <Typography variant='display2'>
-                                Homework
-                        </Typography>
-                            <Blank />
                             <HomeworkUploader />
                         </Grid>
-
-                        <Dialog
-                            open={this.state.bulletinDialog} onClose={() => { this.setState({ bulletinDialog: false }) }}>
-                            <DialogTitle>{'发布公告'}</DialogTitle>
-                            <DialogContent>
-                                <DialogContentText>
-                                    {'公告发布后无法撤回,公告发出后，可能会存在延迟，但网页会自动更新'}
-                                </DialogContentText>
-                                <TextField autoFocus margin="dense" id="body" label="新公告" fullWidth onChange={(e) => {
-                                    this.setState({
-                                        newBulletin: e.target.value,
-                                    })
-                                }} />
-                            </DialogContent>
-                            <DialogActions>
-                                <Button onClick={() => this.setState({ bulletinDialog: false })}>
-                                    取消
-                             </Button>
-                                <Button onClick={() => {
-                                    this._publishBulletin();
-                                    this.setState({ bulletinDialog: false, newBulletin: false });
-                                }
-                                }>
-                                    发布
-                             </Button>
-                            </DialogActions>
-                        </Dialog>
-
-                        <Launcher
-                            agentProfile={{
-                                teamName: course.name,
-                                imageUrl: 'https://a.slack-edge.com/66f9/img/avatars-teams/ava_0001-34.png'
-                            }}
-                            onMessageWasSent={this._onMsgSend.bind(this)}
-                            messageList={this.state.messageList}
-                            showEmoji
-                        />
+                        <Chatter
+                            ref={instance=>this.chatter=instance}
+                            title={this.state.course.name}
+                            courseId={this.state.course.id}/>
                     </Grid>
                 </div>
             </div>
