@@ -3,10 +3,9 @@ import Typography from 'material-ui/Typography';
 import Button from 'material-ui/Button';
 import axios from 'axios';
 import { Launcher } from 'react-chat-window';
-import BulletinList from './bulletin_list';
+import BulletinList from './BulletinList'
 import AddIcon from 'material-ui-icons/Add';
 import TextField from 'material-ui/TextField';
-import * as constants from '../constants';
 import { Base64 } from 'js-base64';
 import Blank from './Blank';
 import Dialog, {

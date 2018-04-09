@@ -2,10 +2,9 @@
 import React from "react";
 import axios from 'axios';
 import Typography from 'material-ui/Typography';
-import CourseCard from './course_card';
+import Course from './Course';
 import Grid from 'material-ui/Grid';
-import Divider from "material-ui/Divider";
-import { height } from "window-size";
+import Blank from './Blank';
 class CourseGrids extends React.Component{
     constructor(){
         super();
@@ -31,7 +30,7 @@ class CourseGrids extends React.Component{
         let courseCards=this.state.courses.map(data=>{
             return(
                 <Grid item key={data.id}>
-                <CourseCard
+                <Course
                   courseId={data.id}
                   name={data.name}
                   description={data.desc}
@@ -45,9 +44,7 @@ class CourseGrids extends React.Component{
                 <Typography variant='display1' >
                     {'我教授的课程'}
                 </Typography>
-                <div
-                style={{height:20}}
-                ></div>
+                <Blank />
                 <Grid 
                 container
                 justify="center"

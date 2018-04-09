@@ -1,5 +1,4 @@
 import React from 'react';
-import Typography from 'typeface-roboto';
 import { ListItem,ListItemText,ListItemAvatar } from 'material-ui/List';
 import { Divider } from 'material-ui';
 import Avatar from 'material-ui/Avatar';

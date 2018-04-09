@@ -1,8 +1,7 @@
 import React, { Component } from 'react';
 import logo from './logo.svg';
 import './App.css';
-import Course from './components/course_card';
-import Home from './components/home';
+import Home from './components/Home';
 import axios from 'axios';
 const host="localhost";
 const port="3000";

@@ -13,22 +13,17 @@ import MenuIcon from 'material-ui-icons/Menu';
 import ChevronLeftIcon from 'material-ui-icons/ChevronLeft';
 import ChevronRightIcon from 'material-ui-icons/ChevronRight';
 import { Categories } from '../tileData';
-import CourseGrids from './courses';
+import CourseGrids from './CourseGrids';
+
 import Button from 'material-ui/Button';
-import ReactMaterialNotifications from 'react-materialui-notifications';
-import Message from 'material-ui-icons/Message';
 import Dialog, { DialogContent, DialogTitle, DialogContentText, DialogActions } from 'material-ui/Dialog';
 import TextField from 'material-ui/TextField';
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import { Base64 } from 'js-base64';
 
-const NotificationSystem = require('react-notification-system');
 const drawerWidth = 240;
 const mqtt=require('mqtt');
-// const mqttClient=require('../global').mqtt;
-
-
 
 const styles = theme => ({
   root: {

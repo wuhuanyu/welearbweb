@@ -7,14 +7,15 @@ import Typography from 'material-ui/Typography';
 import {Link} from 'react-router-dom';
 const styles = {
   card: {
-    maxWidth: 300,
+    // width:300,
+    maxWidth: 400,
   },
   media: {
     height: 180,
   },
 };
 
-function CourseCard(props) {
+function Course(props) {
   const { classes } = props;
   const {imageSrc,description,name,courseId}=props;
 
@@ -52,8 +53,8 @@ function CourseCard(props) {
   );
 }
 
-CourseCard.propTypes = {
+Course.propTypes = {
   classes: PropTypes.object.isRequired,
 };
 
-export default withStyles(styles)(CourseCard);
+export default withStyles(styles)(Course);

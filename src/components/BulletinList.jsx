@@ -1,5 +1,5 @@
 import React from 'react';
-import Bulletin from './bulletin';
+import Bulletin from './Bulletin';
 import { withStyles } from 'material-ui/styles';
 import { List, Card } from 'material-ui';
 const styles = theme => ({
@@ -9,8 +9,8 @@ const styles = theme => ({
     }
 });
 class BulletinList extends React.Component {
-    constructor() {
-        super();
+    constructor(props) {
+        super(props);
     }
 
     render() {

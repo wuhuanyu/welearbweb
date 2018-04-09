@@ -1,5 +1,4 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { withStyles } from 'material-ui/styles';
 import AppBar from 'material-ui/AppBar';
 import Toolbar from 'material-ui/Toolbar';
@@ -8,7 +7,7 @@ import Button from 'material-ui/Button';
 import IconButton from 'material-ui/IconButton';
 import MenuIcon from 'material-ui-icons/Menu';
 import Grid from 'material-ui/Grid';
-import CourseCard from './course_card';
+import Course from './Course';
 import axios from 'axios';
 import { Launcher } from 'react-chat-window';
 import Blank from './Blank';
@@ -17,7 +16,7 @@ import { Base64 } from 'js-base64';
 import BulletinBoard from "./BulletinBoard";
 import HomeworkUploader from './HomeworkUploader';
 import Chatter from './Chatter';
-
+import CourseComments from './CourseCommentsBoard';
 const styles = {
     root: {
         flexGrow: 1,
@@ -97,20 +96,22 @@ class CourseDetail extends React.Component {
                     <Blank />
                     <Grid container spacing={24} direction='row'>
                         <Grid item xs={3}>
-                            <CourseCard
+                            <Course
                                 name={course.name}
                                 description={course.desc}
                                 courseId={course.id}
                                 imageSrc={"http://localhost:3000/images/" + course.images[0]}
                             />
+                            <CourseComments courseId={course.id} />
                         </Grid>
+
 
                         <Grid item xs={4}>
                             <BulletinBoard course={this.state.course}/>
                         </Grid>
 
                         <Grid item xs={5}>
-                            <HomeworkUploader />
+                            <HomeworkUploader courseId={this.state.course.id} />
                         </Grid>
                         <Chatter
                             ref={instance=>this.chatter=instance}
